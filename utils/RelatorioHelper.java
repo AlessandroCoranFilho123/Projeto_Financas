@@ -1,16 +1,16 @@
 package utils;
-
-import models.Transacao;
 import java.util.List;
+import app.Main.Transacao;
 
 public class RelatorioHelper {
+
     public static double calcularSaldo(List<Transacao> transacoes) {
         double saldo = 0;
         for (Transacao t : transacoes) {
-            if (t.getTipo().equalsIgnoreCase("Entrada")) {
-                saldo += t.getValor();
+            if (t.tipo().equalsIgnoreCase("Entrada")) {
+                saldo += t.valor();
             } else {
-                saldo -= t.getValor();
+                saldo -= t.valor();
             }
         }
         return saldo;
