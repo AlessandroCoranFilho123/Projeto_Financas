@@ -8,3 +8,4 @@ Entrada;1.0E24;Salário;
 Saída;9.9005E23;Adicionar à Meta;Carro
 Entrada;12.0;Salário;
 Saída;1.0;Adicionar à Meta;Carro
+Saída;11.0;Adicionar à Meta;

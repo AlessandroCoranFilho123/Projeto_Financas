@@ -1,6 +1,7 @@
 package app;
 
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -9,7 +10,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.control.ProgressBar;
 import javafx.stage.Stage;
 import utils.RelatorioHelper;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public class Main extends Application {
      * @param tipo      "Entrada" ou "Saída"
      * @param valor     Valor digitado pelo usuário
      * @param categoria "Salário", "Aluguel", etc.
-     * @param meta      Nome da meta (pode ser vazio)
+     * @param meta      Nome da meta
      */
     public record Transacao(String tipo, double valor, String categoria, String meta) {
 
@@ -110,7 +110,7 @@ public class Main extends Application {
                 lblSaldo
         );
 
-        layout.setStyle("-fx-padding: 20; -fx-alignment: center;");
+        layout.setStyle("-fx-padding: 20; -fx-alignment: center; -fx-background-color: #e0efda; -fx-font-size: 14px;");
 
         atualizarUI();
 
@@ -121,7 +121,7 @@ public class Main extends Application {
         stage.show();
     }
 
-    private void NovaMeta() {
+    private void NovaMeta() { // Referente ao botão de nova meta
         Stage janela = new Stage();
 
         TextField txtNome = new TextField();
@@ -136,7 +136,7 @@ public class Main extends Application {
                 salvar
         );
 
-        layout.setStyle("-fx-padding: 20;");
+        layout.setStyle("-fx-padding: 20; -fx-alignment: center; -fx-background-color: #e0efda; -fx-text-fill: red;");
         janela.setScene(new Scene(layout, 300, 250));
         janela.show();
     }
@@ -161,15 +161,70 @@ public class Main extends Application {
         return salvar;
     }
 
-    public void NovaTransacao() {
+    public void NovaTransacao() { // Referente ao botão de nova transação
         Stage janela = new Stage();
 
-        ComboBox<String> cbTipo = new ComboBox<>();
+        ComboBox<String> cbTipo = new ComboBox<>(); // Caixinha de tipo e valores
         cbTipo.getItems().addAll("Entrada", "Saída");
 
-        ComboBox<String> cbCategoria = new ComboBox<>();
-        ComboBox<Meta> cbMetas = new ComboBox<>();
+        ComboBox<String> cbCategoria = new ComboBox<>(); // Caixinha categoria
+
+        ComboBox<Meta> cbMetas = new ComboBox<>(); // Caixinha de metas
+
         cbMetas.getItems().addAll(metas);
+        cbMetas.setCellFactory(_ -> new ListCell<>() {
+            @Override
+            protected void updateItem(Meta meta, boolean empty) {
+                super.updateItem(meta, empty);
+
+                if (empty || meta == null) {
+                    setText(null);
+                } else {
+                    if (meta.possuiAlvo()) {
+                        setText(
+                                meta.getNome()
+                                        + ": R$ "
+                                        + String.format("%.2f", meta.valorAtual)
+                                        + " / R$ "
+                                        + String.format("%.2f", meta.valorAlvo)
+                        );
+                    } else {
+                        setText(
+                                meta.getNome()
+                                        + "  R$ "
+                                        + String.format("%.2f", meta.valorAtual)
+                        );
+                    }
+                }
+            }
+        });
+
+        cbMetas.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Meta meta, boolean empty) {
+                super.updateItem(meta, empty);
+
+                if (empty || meta == null) {
+                    setText(null);
+                } else {
+                    if (meta.possuiAlvo()) {
+                        setText(
+                                meta.getNome()
+                                        + " — R$ "
+                                        + String.format("%.2f", meta.valorAtual)
+                                        + " / R$ "
+                                        + String.format("%.2f", meta.valorAlvo)
+                        );
+                    } else {
+                        setText(
+                                meta.getNome()
+                                        + " R$ "
+                                        + String.format("%.2f", meta.valorAtual)
+                        );
+                    }
+                }
+            }
+        });
 
         TextField txtValor = new TextField();
 
@@ -276,7 +331,12 @@ public class Main extends Application {
         painelMetas.getChildren().clear();
         for (Meta m : metas) {
             Label nome = new Label(m.getNome());
+            nome.setMaxWidth(Double.MAX_VALUE); // nome.set para centralizar o título
+            nome.setAlignment(Pos.CENTER);
             Label valor = new Label(m.toString());
+            valor.setMaxWidth(Double.MAX_VALUE); // valor.set para centralizar o valor R$
+            valor.setAlignment(Pos.CENTER);
+
             ProgressBar pb = new ProgressBar(m.progresso());
 
             VBox card = new VBox(5, nome, valor, pb);
@@ -296,7 +356,7 @@ public class Main extends Application {
         lblSaldo.setText("Saldo: R$ " + String.format("%.2f", saldo));
     }
 
-    private void carregarTransacoes() {
+    private void carregarTransacoes() { // Carrega o txt "transacoes"
         File arq = new File(ARQUIVO);
         if (!arq.exists()) return;
 
