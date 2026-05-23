@@ -77,6 +77,12 @@
     -fx-border-width: 1 0 0 0;
 }
 
+.saldo-wallets {
+    -fx-padding: 14 0 0 0;
+    -fx-border-color: rgba(255, 255, 255, 0.2);
+    -fx-border-width: 1 0 0 0;
+}
+
 .saldo-banner .stat-label {
     -fx-text-fill: #FFFFFF;
     -fx-font-size: 12px;
@@ -87,6 +93,28 @@
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: #FFFFFF;
+}
+
+.saldo-banner .wallet-value {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFFFFF;
+}
+
+.saldo-action-button {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 8px;
+    -fx-border-color: rgba(255, 255, 255, 0.35);
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 8 14;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+}
+
+.saldo-action-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.24);
 }
 
 .saldo-banner .stat-valor.receita,

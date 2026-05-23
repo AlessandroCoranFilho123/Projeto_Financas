@@ -1,10 +1,13 @@
 package app.controller;
 
 import app.model.Categoria;
+import app.model.Carteira;
 import app.model.Meta;
 import app.model.TipoTransacao;
+import app.repository.CarteiraDAO;
 import app.repository.MetaDAO;
 import app.repository.TransacaoDAO;
+import app.service.CarteiraService;
 import app.service.MetaService;
 import app.service.TransacaoService;
 import app.util.FormatadorData;
@@ -38,6 +41,8 @@ public class TransacaoDialogController {
     @FXML
     private ComboBox<Categoria> cmbCategoria;
     @FXML
+    private ComboBox<Carteira> cmbCarteira;
+    @FXML
     private ComboBox<Meta> cmbMeta;
     @FXML
     private TextArea txtComentario;
@@ -67,6 +72,9 @@ public class TransacaoDialogController {
 
     private TransacaoService transacaoService;
     private MetaService metaService;
+    private CarteiraService carteiraService;
+    private TransacaoDAO transacaoDAO;
+    private MetaDAO metaDAO;
     private boolean confirmado = false;
 
     private static final Logger logger = LoggerFactory.getLogger(TransacaoDialogController.class);
@@ -78,12 +86,14 @@ public class TransacaoDialogController {
 
     @FXML
     public void initialize() {
-        TransacaoDAO transacaoDAO = new TransacaoDAO();
-        MetaDAO metaDAO = new MetaDAO();
-        transacaoService = new TransacaoService(transacaoDAO, metaDAO);
+        transacaoDAO = new TransacaoDAO();
+        metaDAO = new MetaDAO();
+        carteiraService = new CarteiraService(new CarteiraDAO(), transacaoDAO);
+        transacaoService = new TransacaoService(transacaoDAO, metaDAO, carteiraService);
         metaService = new MetaService(metaDAO);
 
         cmbCategoria.setItems(FXCollections.observableArrayList(Categoria.values()));
+        carregarCarteiras();
         FormatadorData.configurar(dateTransacao);
         dateTransacao.setValue(LocalDate.now());
 
@@ -94,6 +104,14 @@ public class TransacaoDialogController {
         atualizarEstadoFormulario();
 
         txtValor.requestFocus();
+    }
+
+    public void setCarteiraService(CarteiraService carteiraService) {
+        this.carteiraService = carteiraService;
+        if (transacaoDAO != null && metaDAO != null) {
+            transacaoService = new TransacaoService(transacaoDAO, metaDAO, carteiraService);
+        }
+        carregarCarteiras();
     }
 
     public void configurarParaEditar(app.model.Transacao transacao) {
@@ -121,6 +139,8 @@ public class TransacaoDialogController {
             Meta meta = metaDAO.buscarPorId(transacao.metaId());
             cmbMeta.setValue(meta);
         }
+
+        selecionarCarteira(transacao.carteiraId());
 
         // Preenche comentário com o valor real (nunca com o nome da categoria)
         txtComentario.setText(transacao.comentario());
@@ -167,6 +187,7 @@ public class TransacaoDialogController {
             LocalDate data = dateTransacao.getValue();
             Categoria categoria = cmbCategoria.getValue();
             Meta meta = cmbMeta.getValue();
+            Carteira carteira = cmbCarteira.getValue();
 
             // Comentário é sempre o texto livre do usuário — nunca é substituído
             // pela categoria (isso é papel do campo descricao, preenchido pelo service)
@@ -190,6 +211,12 @@ public class TransacaoDialogController {
                 return;
             }
 
+            if (carteira == null) {
+                mostrarErro("Selecione uma carteira");
+                cmbCarteira.requestFocus();
+                return;
+            }
+
             boolean exigeMeta = categoria == Categoria.AdicionarMeta ||
                     categoria == Categoria.RetirarMeta;
 
@@ -207,10 +234,11 @@ public class TransacaoDialogController {
                         valorCentavos,
                         meta,
                         comentario,
-                        data
+                        data,
+                        carteira.id()
                 );
             } else {
-                transacaoService.registrar(tipo, categoria, valorCentavos, meta, comentario, data);
+                transacaoService.registrar(tipo, categoria, valorCentavos, meta, comentario, data, carteira.id());
             }
 
             confirmado = true;
@@ -319,6 +347,30 @@ public class TransacaoDialogController {
         List<Meta> metas = metaService.listarTodasMetas();
         cmbMeta.setItems(FXCollections.observableArrayList(metas));
         cmbMeta.setValue(null);
+    }
+
+    private void carregarCarteiras() {
+        if (carteiraService == null || cmbCarteira == null) {
+            return;
+        }
+
+        List<Carteira> carteiras = carteiraService.listarCarteiras();
+        cmbCarteira.setItems(FXCollections.observableArrayList(carteiras));
+        if (!carteiras.isEmpty() && cmbCarteira.getValue() == null) {
+            cmbCarteira.setValue(carteiras.getFirst());
+        }
+    }
+
+    private void selecionarCarteira(java.util.UUID carteiraId) {
+        if (carteiraService == null || cmbCarteira == null) {
+            return;
+        }
+
+        java.util.UUID idEfetivo = carteiraId != null ? carteiraId : CarteiraDAO.BANCO_ID;
+        Carteira carteira = carteiraService.buscarPorId(idEfetivo);
+        if (carteira != null) {
+            cmbCarteira.setValue(carteira);
+        }
     }
 
     private void atualizarInfoMeta(Meta meta) {

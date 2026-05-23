@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="app.controller.CartoesViewController"
+      styleClass="view-container"
+      spacing="20"
+      prefWidth="900"
+      prefHeight="600">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="Cartão de crédito" styleClass="view-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNova" text="+ Nova compra" styleClass="button-primary"/>
+    </HBox>
+
+    <HBox spacing="20" styleClass="stats-bar">
+        <padding>
+            <Insets top="15" right="20" bottom="15" left="20"/>
+        </padding>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Total aberto" styleClass="stat-label"/>
+            <Label fx:id="lblTotalAberto" text="R$ 0,00" styleClass="stat-value-large"/>
+        </VBox>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Parcelas do mês" styleClass="stat-label"/>
+            <Label fx:id="lblParcelasMes" text="R$ 0,00" styleClass="stat-value-large"/>
+        </VBox>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Vencendo em 7 dias" styleClass="stat-label"/>
+            <Label fx:id="lblVencendo" text="0" styleClass="stat-value-large"/>
+        </VBox>
+    </HBox>
+
+    <Label fx:id="lblAviso"
+           text=""
+           visible="false"
+           managed="false"
+           styleClass="alert-label"/>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="planning-scroll">
+        <content>
+            <FlowPane fx:id="flowCartoes"
+                      hgap="16"
+                      vgap="16"
+                      prefWrapLength="760"
+                      styleClass="cards-flow">
+                <padding>
+                    <Insets top="4" right="4" bottom="16" left="4"/>
+                </padding>
+            </FlowPane>
+        </content>
+    </ScrollPane>
+</VBox>

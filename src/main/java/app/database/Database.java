@@ -1,5 +1,7 @@
 package app.database;
 
+import app.repository.CarteiraDAO;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -33,7 +35,9 @@ public final class Database {
                     )
                     """);
 
-            // Tabela transacao - schema completo com comentario e categoria
+            CarteiraDAO.criarEstrutura(stmt);
+
+            // Tabela transacao - schema completo com comentario, categoria e carteira
             stmt.execute("""
                     CREATE TABLE IF NOT EXISTS transacao (
                         id             TEXT PRIMARY KEY,
@@ -44,14 +48,23 @@ public final class Database {
                         data           TEXT    NOT NULL,
                         meta_id        TEXT,
                         categoria      TEXT,
-                        FOREIGN KEY (meta_id) REFERENCES meta (id) ON DELETE SET NULL
+                        carteira_id    TEXT    DEFAULT '00000000-0000-0000-0000-000000000001',
+                        FOREIGN KEY (meta_id) REFERENCES meta (id) ON DELETE SET NULL,
+                        FOREIGN KEY (carteira_id) REFERENCES carteira (id) ON DELETE SET NULL
                     )
                     """);
 
             // Migrations para bancos existentes que não possuem as colunas novas
             executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN comentario TEXT NOT NULL DEFAULT ''");
             executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN categoria TEXT");
+            executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN carteira_id TEXT");
+            stmt.execute("""
+                    UPDATE transacao
+                    SET carteira_id = '00000000-0000-0000-0000-000000000001'
+                    WHERE carteira_id IS NULL
+                    """);
 
+            criarTabelasPlanejamento(stmt);
             criarIndices(stmt);
             criarBuscaTextual(stmt);
 
@@ -141,7 +154,32 @@ public final class Database {
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_tipo_data ON transacao (tipo, data)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_categoria_data ON transacao (categoria, data)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_meta_id ON transacao (meta_id)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_carteira_id ON transacao (carteira_id)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_meta_nome ON meta (nome COLLATE NOCASE)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_compra_cartao_vencimento ON compra_cartao_credito (vencimento)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_emprestimo_tipo_data ON emprestimo (tipo, data_pagamento)");
+    }
+
+    private static void criarTabelasPlanejamento(Statement stmt) throws SQLException {
+        stmt.execute("""
+                CREATE TABLE IF NOT EXISTS compra_cartao_credito (
+                    id                    TEXT PRIMARY KEY,
+                    nome                  TEXT    NOT NULL,
+                    valor_total_centavos  INTEGER NOT NULL,
+                    parcelas              INTEGER NOT NULL,
+                    vencimento            TEXT    NOT NULL
+                )
+                """);
+
+        stmt.execute("""
+                CREATE TABLE IF NOT EXISTS emprestimo (
+                    id              TEXT PRIMARY KEY,
+                    tipo            TEXT    NOT NULL,
+                    nome            TEXT    NOT NULL,
+                    valor_centavos  INTEGER NOT NULL,
+                    data_pagamento  TEXT    NOT NULL
+                )
+                """);
     }
 
     private static void criarBuscaTextual(Statement stmt) throws SQLException {

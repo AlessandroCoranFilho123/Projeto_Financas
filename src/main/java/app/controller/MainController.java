@@ -2,8 +2,10 @@ package app.controller;
 
 import app.model.Meta;
 import app.model.Transacao;
+import app.repository.CarteiraDAO;
 import app.repository.MetaDAO;
 import app.repository.TransacaoDAO;
+import app.service.CarteiraService;
 import app.service.MetaService;
 import app.service.TransacaoService;
 import app.util.CssManager;
@@ -57,6 +59,10 @@ public class MainController {
     @FXML
     private Button btnMetas;
     @FXML
+    private Button btnCartoes;
+    @FXML
+    private Button btnEmprestimos;
+    @FXML
     private Button btnTema;
     @FXML
     private ImageView imgTema;
@@ -68,6 +74,14 @@ public class MainController {
     private Label lblReceitasMes;
     @FXML
     private Label lblDespesasMes;
+    @FXML
+    private Label lblSaldoBanco;
+    @FXML
+    private Label lblSaldoDinheiroFisico;
+    @FXML
+    private Button btnCarteiras;
+    @FXML
+    private Button btnTransferirCarteira;
     @FXML
     private ListView<Transacao> listTransacoes;
     @FXML
@@ -83,6 +97,7 @@ public class MainController {
 
     private TransacaoService transacaoService;
     private MetaService metaService;
+    private CarteiraService carteiraService;
     private boolean darkTheme = false;
     private static final Preferences PREFS = Preferences.userNodeForPackage(MainController.class);
 
@@ -105,8 +120,10 @@ public class MainController {
     private void inicializarServicos() {
         TransacaoDAO transacaoDAO = new TransacaoDAO();
         MetaDAO metaDAO = new MetaDAO();
+        CarteiraDAO carteiraDAO = new CarteiraDAO();
 
-        transacaoService = new TransacaoService(transacaoDAO, metaDAO);
+        carteiraService = new CarteiraService(carteiraDAO, transacaoDAO);
+        transacaoService = new TransacaoService(transacaoDAO, metaDAO, carteiraService);
         metaService = new MetaService(metaDAO);
     }
 
@@ -128,6 +145,11 @@ public class MainController {
         btnMetas.setOnAction(e -> navegarParaMetas());
         btnNovaMeta.setOnAction(e -> abrirDialogNovaMeta());
         btnVerTodasMetas.setOnAction(e -> navegarParaMetas());
+
+        btnCartoes.setOnAction(e -> navegarParaCartoes());
+        btnEmprestimos.setOnAction(e -> navegarParaEmprestimos());
+        btnCarteiras.setOnAction(e -> abrirDialogCarteiras());
+        btnTransferirCarteira.setOnAction(e -> abrirDialogTransferenciaCarteira());
 
         // Duplo clique abre detalhes transações
         listTransacoes.setOnMouseClicked(e -> {
@@ -158,8 +180,9 @@ public class MainController {
 
     private void carregarSaldo() {
         try {
-            long saldoCentavos = transacaoService.calcularSaldoDisponivelCentavos();
+            long saldoCentavos = carteiraService.calcularSaldoTotalCentavos();
             lblSaldo.setText(currencyFormatter.format(saldoCentavos / 100.0));
+            carregarSaldosCarteiras();
 
             YearMonth mesAtual = YearMonth.now();
             long receitasCentavos = transacaoService.calcularReceitasMes(mesAtual);
@@ -171,7 +194,16 @@ public class MainController {
         } catch (Exception e) {
             logger.error("Erro ao carregar saldo: {}", e.getMessage());
             lblSaldo.setText("R$ 0,00");
+            lblSaldoBanco.setText("R$ 0,00");
+            lblSaldoDinheiroFisico.setText("R$ 0,00");
         }
+    }
+
+    private void carregarSaldosCarteiras() {
+        long saldoBanco = carteiraService.calcularSaldoCarteiraCentavos(CarteiraDAO.BANCO_ID);
+        long saldoDinheiro = carteiraService.calcularSaldoCarteiraCentavos(CarteiraDAO.DINHEIRO_FISICO_ID);
+        lblSaldoBanco.setText(currencyFormatter.format(saldoBanco / 100.0));
+        lblSaldoDinheiroFisico.setText(currencyFormatter.format(saldoDinheiro / 100.0));
     }
 
     private void carregarTransacoesRecentes() {
@@ -218,6 +250,16 @@ public class MainController {
         expandirViewMetas();
     }
 
+    private void navegarParaCartoes() {
+        marcarBotaoAtivo(btnCartoes);
+        expandirViewCartoes();
+    }
+
+    private void navegarParaEmprestimos() {
+        marcarBotaoAtivo(btnEmprestimos);
+        expandirViewEmprestimos();
+    }
+
     // Expande o histórico de transações na própria janela principal
     private void expandirHistoricoTransacoes() {
         try {
@@ -258,11 +300,35 @@ public class MainController {
         }
     }
 
+    private void expandirViewCartoes() {
+        try {
+            VBox viewRoot = FXMLLoader.load(
+                    getClass().getResource("/app/view/cartoes_view.fxml")
+            );
+            rootContainer.setCenter(viewRoot);
+        } catch (Exception e) {
+            logger.error("Erro ao expandir view de cartões: {}", e.getMessage());
+        }
+    }
+
+    private void expandirViewEmprestimos() {
+        try {
+            VBox viewRoot = FXMLLoader.load(
+                    getClass().getResource("/app/view/emprestimos_view.fxml")
+            );
+            rootContainer.setCenter(viewRoot);
+        } catch (Exception e) {
+            logger.error("Erro ao expandir view de empréstimos: {}", e.getMessage());
+        }
+    }
+
     // Quando botão for clicado, fica destacado
     private void marcarBotaoAtivo(Button botaoAtivo) {
         btnInicio.getStyleClass().remove("active");
         btnTransacao.getStyleClass().remove("active");
         btnMetas.getStyleClass().remove("active");
+        btnCartoes.getStyleClass().remove("active");
+        btnEmprestimos.getStyleClass().remove("active");
 
         if (!botaoAtivo.getStyleClass().contains("active")) {
             botaoAtivo.getStyleClass().add("active");
@@ -323,6 +389,7 @@ public class MainController {
 
             VBox dialogRoot = loader.load();
             TransacaoDialogController controller = loader.getController();
+            controller.setCarteiraService(carteiraService);
 
             Stage dialogStage = new Stage();
             dialogStage.setTitle("Nova Transação");
@@ -342,7 +409,7 @@ public class MainController {
             dialogStage.setScene(scene);
             dialogStage.setResizable(true);
             dialogStage.setMinWidth(520);
-            dialogStage.setMinHeight(650);
+            dialogStage.setMinHeight(700);
             dialogStage.setMaxWidth(600);
             IconManager.setTransacaoIcon(dialogStage);
 
@@ -374,6 +441,7 @@ public class MainController {
             VBox dialogRoot = loader.load();
             TransacaoDialogController controller = loader.getController();
 
+            controller.setCarteiraService(carteiraService);
             controller.configurarParaEditar(transacao);
 
             Stage dialogStage = new Stage();
@@ -393,7 +461,7 @@ public class MainController {
             dialogStage.setScene(scene);
             dialogStage.setResizable(true);
             dialogStage.setMinWidth(520);
-            dialogStage.setMinHeight(500);
+            dialogStage.setMinHeight(700);
             dialogStage.setMaxWidth(600);
             IconManager.setDetalheIcon(dialogStage);
 
@@ -494,6 +562,82 @@ public class MainController {
 
         } catch (Exception e) {
             logger.error("Erro ao abrir detalhes da meta: {}", e.getMessage());
+        }
+    }
+
+    private void abrirDialogCarteiras() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/app/view/carteiras_dialog.fxml")
+            );
+
+            VBox dialogRoot = loader.load();
+            CarteirasDialogController controller = loader.getController();
+            controller.setCarteiraService(carteiraService);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Carteiras");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            Window owner = obterJanelaPrincipal();
+            if (owner != null) {
+                dialogStage.initOwner(owner);
+            }
+
+            Scene scene = new Scene(dialogRoot);
+            CssManager.aplicarCss(scene);
+            if (darkTheme) {
+                dialogRoot.getStyleClass().add("dark-theme");
+            }
+
+            dialogStage.setScene(scene);
+            dialogStage.setResizable(false);
+            dialogStage.setMinWidth(480);
+            IconManager.setAppIcon(dialogStage);
+            dialogStage.showAndWait();
+
+            if (controller.isConfirmado()) {
+                carregarDados();
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao abrir dialog de carteiras: {}", e.getMessage());
+        }
+    }
+
+    private void abrirDialogTransferenciaCarteira() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/app/view/transferencia_carteira_dialog.fxml")
+            );
+
+            VBox dialogRoot = loader.load();
+            TransferenciaCarteiraDialogController controller = loader.getController();
+            controller.setCarteiraService(carteiraService);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Transferir entre carteiras");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            Window owner = obterJanelaPrincipal();
+            if (owner != null) {
+                dialogStage.initOwner(owner);
+            }
+
+            Scene scene = new Scene(dialogRoot);
+            CssManager.aplicarCss(scene);
+            if (darkTheme) {
+                dialogRoot.getStyleClass().add("dark-theme");
+            }
+
+            dialogStage.setScene(scene);
+            dialogStage.setResizable(false);
+            dialogStage.setMinWidth(500);
+            IconManager.setAppIcon(dialogStage);
+            dialogStage.showAndWait();
+
+            if (controller.isConfirmado()) {
+                carregarDados();
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao abrir transferência de carteira: {}", e.getMessage());
         }
     }
 }

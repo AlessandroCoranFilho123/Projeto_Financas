@@ -20,41 +20,50 @@ public class TransacaoDAO {
     private volatile boolean migrationDone = false;
     private volatile boolean searchInfrastructureDone = false;
 
-
-    /**
-     * Ponto de extensão para testes: subclasses podem injetar
-     * uma Connection de banco em memória sem alterar o código de produção.
-     */
     protected Connection getConn() throws SQLException {
         return Database.getConnection();
     }
 
-    // Garante que a coluna comentario existe
-    protected void garantirColunaComentario() {
+    // Garante que bancos antigos tenham as colunas incrementais usadas pelo app.
+    protected void garantirSchemaTransacao() {
         if (migrationDone) return;
         synchronized (this) {
             if (migrationDone) return;
             try (Connection c = getConn();
-                 var rs = c.getMetaData().getColumns(null, null, "transacao", "comentario")) {
-                if (!rs.next()) {
-                    try (Statement stmt = c.createStatement()) {
-                        stmt.execute("ALTER TABLE transacao ADD COLUMN comentario TEXT NOT NULL DEFAULT ''");
-                    }
+                 Statement stmt = c.createStatement()) {
+                executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN comentario TEXT NOT NULL DEFAULT ''");
+                executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN categoria TEXT");
+                executarMigrationSegura(stmt, "ALTER TABLE transacao ADD COLUMN carteira_id TEXT");
+                stmt.execute("""
+                        UPDATE transacao
+                        SET carteira_id = '00000000-0000-0000-0000-000000000001'
+                        WHERE carteira_id IS NULL
+                        """);
+                try {
+                    stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_carteira_id ON transacao (carteira_id)");
+                } catch (SQLException ignored) {
+                    // Índice opcional para schemas de teste muito reduzidos.
                 }
                 migrationDone = true;
             } catch (SQLException e) {
-                throw new RuntimeException("Erro na migration comentario", e);
+                throw new RuntimeException("Erro na migration de transacao", e);
             }
         }
     }
 
+    protected void garantirColunaComentario() {
+        garantirSchemaTransacao();
+    }
+
     public void inserir(Transacao transacao) {
         String sql = """
-                INSERT INTO transacao (id, descricao, comentario, valor_centavos, tipo, data, meta_id, categoria)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO transacao (
+                    id, descricao, comentario, valor_centavos, tipo, data, meta_id, categoria, carteira_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        garantirColunaComentario();
+        garantirSchemaTransacao();
         try (Connection c = getConn();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
@@ -77,6 +86,11 @@ public class TransacaoDAO {
                 ps.setNull(8, Types.VARCHAR);
             }
 
+            UUID carteiraId = transacao.carteiraId() != null
+                    ? transacao.carteiraId()
+                    : CarteiraDAO.BANCO_ID;
+            ps.setString(9, carteiraId.toString());
+
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -85,7 +99,7 @@ public class TransacaoDAO {
     }
 
     public List<Transacao> listarRecentes(int limite) {
-        garantirColunaComentario();
+        garantirSchemaTransacao();
         List<Transacao> list = new ArrayList<>();
 
         String sql = """
@@ -116,7 +130,8 @@ public class TransacaoDAO {
                         TipoTransacao.valueOf(rs.getString("tipo")),
                         LocalDate.parse(rs.getString("data")),
                         metaId,
-                        categoria
+                        categoria,
+                        lerCarteiraId(rs)
                 ));
             }
 
@@ -184,7 +199,7 @@ public class TransacaoDAO {
     }
 
     public List<Transacao> listarTodas() {
-        garantirColunaComentario();
+        garantirSchemaTransacao();
         List<Transacao> list = new ArrayList<>();
 
         String sql = """
@@ -212,7 +227,8 @@ public class TransacaoDAO {
                         TipoTransacao.valueOf(rs.getString("tipo")),
                         LocalDate.parse(rs.getString("data")),
                         metaId,
-                        categoria
+                        categoria,
+                        lerCarteiraId(rs)
                 ));
             }
 
@@ -224,6 +240,7 @@ public class TransacaoDAO {
     }
 
     public long calcularSaldo() {
+        garantirSchemaTransacao();
         String sql = """
                 SELECT SUM(
                     CASE tipo
@@ -246,7 +263,7 @@ public class TransacaoDAO {
     }
 
     public Transacao buscarPorId(UUID id) {
-        garantirColunaComentario();
+        garantirSchemaTransacao();
         String sql = "SELECT * FROM transacao WHERE id = ?";
 
         try (Connection c = getConn();
@@ -272,7 +289,8 @@ public class TransacaoDAO {
                     TipoTransacao.valueOf(rs.getString("tipo")),
                     LocalDate.parse(rs.getString("data")),
                     metaId,
-                    categoria
+                    categoria,
+                    lerCarteiraId(rs)
             );
 
         } catch (SQLException e) {
@@ -281,6 +299,7 @@ public class TransacaoDAO {
     }
 
     public long calcularTotalPorTipoEMes(TipoTransacao tipo, String anoMes) {
+        garantirSchemaTransacao();
         YearMonth mes;
         try {
             mes = YearMonth.parse(anoMes);
@@ -315,6 +334,7 @@ public class TransacaoDAO {
     }
 
     public void excluir(UUID id) {
+        garantirSchemaTransacao();
         try (Connection c = getConn();
              PreparedStatement ps =
                      c.prepareStatement("DELETE FROM transacao WHERE id = ?")) {
@@ -328,7 +348,7 @@ public class TransacaoDAO {
     }
 
     private void garantirInfraestruturaBusca() {
-        garantirColunaComentario();
+        garantirSchemaTransacao();
         if (searchInfrastructureDone) return;
         synchronized (this) {
             if (searchInfrastructureDone) return;
@@ -338,6 +358,7 @@ public class TransacaoDAO {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_tipo_data ON transacao (tipo, data)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_categoria_data ON transacao (categoria, data)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_meta_id ON transacao (meta_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_transacao_carteira_id ON transacao (carteira_id)");
                 criarBuscaTextual(stmt);
                 searchInfrastructureDone = true;
             } catch (SQLException e) {
@@ -440,7 +461,50 @@ public class TransacaoDAO {
                 TipoTransacao.valueOf(rs.getString("tipo")),
                 LocalDate.parse(rs.getString("data")),
                 metaId,
-                categoria
+                categoria,
+                lerCarteiraId(rs)
         );
+    }
+
+    public long calcularSaldoPorCarteira(UUID carteiraId) {
+        garantirSchemaTransacao();
+        UUID carteiraEfetiva = carteiraId != null ? carteiraId : CarteiraDAO.BANCO_ID;
+        String sql = """
+                SELECT SUM(
+                    CASE tipo
+                        WHEN 'Entrada' THEN valor_centavos
+                        ELSE -valor_centavos
+                    END
+                ) AS saldo
+                FROM transacao
+                WHERE COALESCE(carteira_id, ?) = ?
+                """;
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, CarteiraDAO.BANCO_ID.toString());
+            ps.setString(2, carteiraEfetiva.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong("saldo") : 0L;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao calcular saldo por carteira", e);
+        }
+    }
+
+    private void executarMigrationSegura(Statement stmt, String sql) throws SQLException {
+        try {
+            stmt.execute(sql);
+        } catch (SQLException ignored) {
+            // Coluna já existe.
+        }
+    }
+
+    private UUID lerCarteiraId(ResultSet rs) throws SQLException {
+        String carteira = rs.getString("carteira_id");
+        if (carteira == null || CarteiraDAO.BANCO_ID.toString().equals(carteira)) {
+            return null;
+        }
+        return UUID.fromString(carteira);
     }
 }

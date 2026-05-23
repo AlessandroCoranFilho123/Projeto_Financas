@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="app.controller.TransferenciaCarteiraDialogController"
+      styleClass="dialog-container"
+      spacing="18"
+      prefWidth="500">
+
+    <padding>
+        <Insets top="25" right="30" bottom="25" left="30"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <ImageView fitHeight="36" fitWidth="36" preserveRatio="true" styleClass="dialog-logo">
+            <Image url="@../icons/logo.png"/>
+        </ImageView>
+        <Label text="Transferir entre carteiras" styleClass="view-title"/>
+    </HBox>
+
+    <HBox spacing="12">
+        <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Origem" styleClass="form-label"/>
+            <ComboBox fx:id="cmbOrigem"
+                      promptText="Carteira de origem"
+                      styleClass="form-combo"
+                      prefHeight="40"
+                      maxWidth="Infinity"/>
+        </VBox>
+
+        <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Destino" styleClass="form-label"/>
+            <ComboBox fx:id="cmbDestino"
+                      promptText="Carteira de destino"
+                      styleClass="form-combo"
+                      prefHeight="40"
+                      maxWidth="Infinity"/>
+        </VBox>
+    </HBox>
+
+    <VBox spacing="6">
+        <Label text="Valor" styleClass="form-label"/>
+        <TextField fx:id="txtValor" promptText="0,00" styleClass="form-field"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Data" styleClass="form-label"/>
+        <DatePicker fx:id="dateTransferencia"
+                    promptText="Selecione a data"
+                    prefHeight="40"
+                    maxWidth="Infinity"
+                    styleClass="form-combo"/>
+    </VBox>
+
+    <VBox spacing="6">
+        <Label text="Comentário" styleClass="form-label"/>
+        <TextArea fx:id="txtComentario"
+                  promptText="Ex: saque, depósito, ajuste entre banco e dinheiro físico"
+                  styleClass="form-field, field-textarea"
+                  prefRowCount="3"
+                  wrapText="true"/>
+    </VBox>
+
+    <Label fx:id="lblErro"
+           text=""
+           visible="false"
+           managed="false"
+           styleClass="error-label"/>
+
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnCancelar" text="Cancelar" styleClass="button-secondary"/>
+        <Button fx:id="btnSalvar" text="Transferir" styleClass="button-primary"/>
+    </HBox>
+</VBox>

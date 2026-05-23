@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="app.controller.EmprestimosViewController"
+      styleClass="view-container"
+      spacing="20"
+      prefWidth="900"
+      prefHeight="600">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="Empréstimos" styleClass="view-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNovo" text="+ Novo empréstimo" styleClass="button-primary"/>
+    </HBox>
+
+    <HBox spacing="20" styleClass="stats-bar">
+        <padding>
+            <Insets top="15" right="20" bottom="15" left="20"/>
+        </padding>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Emprestei pra alguém" styleClass="stat-label"/>
+            <Label fx:id="lblTotalEmprestei" text="R$ 0,00" styleClass="stat-value-large"/>
+        </VBox>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Pedi emprestado" styleClass="stat-label"/>
+            <Label fx:id="lblTotalPedi" text="R$ 0,00" styleClass="stat-value-large"/>
+        </VBox>
+    </HBox>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox spacing="12" styleClass="loan-column" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="18" right="18" bottom="18" left="18"/>
+            </padding>
+            <Label text="Emprestei pra alguém" styleClass="section-subtitle"/>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="planning-scroll">
+                <content>
+                    <VBox fx:id="boxEmprestei" spacing="12"/>
+                </content>
+            </ScrollPane>
+        </VBox>
+
+        <VBox spacing="12" styleClass="loan-column" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="18" right="18" bottom="18" left="18"/>
+            </padding>
+            <Label text="Pedi emprestado" styleClass="section-subtitle"/>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="planning-scroll">
+                <content>
+                    <VBox fx:id="boxPedi" spacing="12"/>
+                </content>
+            </ScrollPane>
+        </VBox>
+    </HBox>
+</VBox>

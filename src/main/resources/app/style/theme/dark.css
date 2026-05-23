@@ -92,8 +92,19 @@
 .dark-theme .saldo-banner .stat-valor.despesa,
 .dark-theme .saldo-banner .stat-value,
 .dark-theme .saldo-banner .stat-value.entrada,
-.dark-theme .saldo-banner .stat-value.saida {
+.dark-theme .saldo-banner .stat-value.saida,
+.dark-theme .saldo-banner .wallet-value {
     -fx-text-fill: -color-text-main;
+}
+
+.dark-theme .saldo-action-button {
+    -fx-background-color: rgba(99, 102, 241, 0.16);
+    -fx-border-color: rgba(129, 140, 248, 0.45);
+    -fx-text-fill: -color-text-main;
+}
+
+.dark-theme .saldo-action-button:hover {
+    -fx-background-color: rgba(99, 102, 241, 0.26);
 }
 
 /* Títulos de seção */
@@ -556,6 +567,61 @@
 
 .dark-theme .button-excluir:hover {
     -fx-background-color: rgba(244, 63, 94, 0.14);
+}
+
+.dark-theme .planning-scroll,
+.dark-theme .planning-scroll > .viewport,
+.dark-theme .cards-flow {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.dark-theme .planning-card-title,
+.dark-theme .planning-card-value {
+    -fx-text-fill: #f8fafc;
+}
+
+.dark-theme .planning-card-subtitle {
+    -fx-text-fill: #cbd5e1;
+}
+
+.dark-theme .planning-card-warning {
+    -fx-text-fill: #fecaca;
+}
+
+.dark-theme .cartao-verde {
+    -fx-background-color: rgba(16, 185, 129, 0.20);
+    -fx-border-color: rgba(52, 211, 153, 0.55);
+}
+
+.dark-theme .cartao-laranja {
+    -fx-background-color: rgba(245, 158, 11, 0.22);
+    -fx-border-color: rgba(251, 191, 36, 0.60);
+}
+
+.dark-theme .cartao-vermelho {
+    -fx-background-color: rgba(244, 63, 94, 0.22);
+    -fx-border-color: rgba(251, 113, 133, 0.62);
+}
+
+.dark-theme .alert-label {
+    -fx-background-color: rgba(245, 158, 11, 0.18);
+    -fx-border-color: rgba(251, 191, 36, 0.45);
+    -fx-text-fill: #fef3c7;
+}
+
+.dark-theme .loan-column,
+.dark-theme .loan-box {
+    -fx-background-color: -color-bg-surface-alt;
+    -fx-border-color: -color-border;
+}
+
+.dark-theme .loan-box-emprestei {
+    -fx-border-color: rgba(52, 211, 153, 0.55);
+}
+
+.dark-theme .loan-box-pedi {
+    -fx-border-color: rgba(251, 113, 133, 0.62);
 }
 /* Barra de progresso nas células de Meta — modo escuro */
 .dark-theme .meta-progress-track {

@@ -93,8 +93,19 @@
 .saldo-banner .stat-valor.despesa,
 .saldo-banner .stat-value,
 .saldo-banner .stat-value.entrada,
-.saldo-banner .stat-value.saida {
+.saldo-banner .stat-value.saida,
+.saldo-banner .wallet-value {
     -fx-text-fill: #ffffff;
+}
+
+.saldo-action-button {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-border-color: rgba(255, 255, 255, 0.35);
+    -fx-text-fill: #ffffff;
+}
+
+.saldo-action-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.24);
 }
 
 .section-title {

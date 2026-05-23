@@ -12,6 +12,8 @@ Smart Finance é um aplicativo desktop para controle financeiro pessoal, feito e
 - Filtros por tipo, categoria e período.
 - Exportação de transações em `.csv` e `.txt`.
 - Criação e acompanhamento de metas financeiras.
+- Registro de compras parceladas no cartão de crédito, com valor mensal calculado e alerta de vencimento.
+- Anotações de empréstimos separadas entre "Emprestei pra alguém" e "Pedi emprestado".
 - Dashboard com saldo disponível, receitas do mês, despesas do mês, transações recentes e metas.
 - Interface com tema claro e escuro.
 - Persistência de dados em SQLite.
@@ -59,7 +61,7 @@ O banco de dados é local. Em ambiente instalado, os dados ficam em:
 %APPDATA%\SmartFinance\financas.db
 ```
 
-O projeto usa `PreparedStatement` nas operações de banco, `PRAGMA foreign_keys`, índices para consultas frequentes e FTS5 para busca textual. Também há uma base de criptografia com AES-256-GCM e gerenciamento de chave pelo Windows Credential Manager.
+O projeto usa `PreparedStatement` nas operações de banco, `PRAGMA foreign_keys`, índices para consultas frequentes e FTS5 para busca textual. Compras no cartão e empréstimos ficam em tabelas próprias, sem transformar automaticamente esses registros em transações. Também há uma base de criptografia com AES-256-GCM e gerenciamento de chave pelo Windows Credential Manager.
 
 ## Desenvolvimento
 
@@ -92,3 +94,7 @@ mvn package
 - JUnit 5.10.1
 - Mockito 5.8.0
 - jlink / jpackage
+
+## Status do projeto
+
+Projeto acadêmico em evolução. A versão atual foca em controle de transações, metas, cartão de crédito, empréstimos, persistência local, melhorias visuais, exportação de dados, otimizações de banco e fundação inicial de segurança.

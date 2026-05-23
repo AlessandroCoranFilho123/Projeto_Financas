@@ -56,7 +56,30 @@
                     </graphic>
                 </Button>
 
+                <Button fx:id="btnCartoes" graphicTextGap="12" maxWidth="Infinity" styleClass="button-sidebar">
+                    <graphic>
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
+                                <Image url="@../icons/credito.png"/>
+                            </ImageView>
+                            <Label styleClass="sidebar-text" text="Crédito"/>
+                        </HBox>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="btnEmprestimos" graphicTextGap="12" maxWidth="Infinity" styleClass="button-sidebar">
+                    <graphic>
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
+                                <Image url="@../icons/emprestimo.png"/>
+                            </ImageView>
+                            <Label styleClass="sidebar-text" text="Empréstimos"/>
+                        </HBox>
+                    </graphic>
+                </Button>
+
                 <Region VBox.vgrow="ALWAYS"/>
+
 
                 <Button fx:id="btnTema" graphicTextGap="12" maxWidth="Infinity" styleClass="button-sidebar">
                     <VBox.margin>
@@ -108,6 +131,23 @@
                         <!-- Sem inline style — cor controlada por .saldo-banner .stat-value.saida no CSS -->
                         <Label fx:id="lblDespesasMes" styleClass="stat-value, saida" text="R$ 0,00"/>
                     </VBox>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="24" styleClass="saldo-wallets">
+                    <VBox spacing="4">
+                        <Label styleClass="stat-label" text="Banco"/>
+                        <Label fx:id="lblSaldoBanco" styleClass="wallet-value" text="R$ 0,00"/>
+                    </VBox>
+
+                    <VBox spacing="4">
+                        <Label styleClass="stat-label" text="Dinheiro físico"/>
+                        <Label fx:id="lblSaldoDinheiroFisico" styleClass="wallet-value" text="R$ 0,00"/>
+                    </VBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="btnCarteiras" text="Carteiras" styleClass="saldo-action-button"/>
+                    <Button fx:id="btnTransferirCarteira" text="Transferir" styleClass="saldo-action-button"/>
                 </HBox>
             </VBox>
 

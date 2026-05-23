@@ -16,10 +16,18 @@ public class TransacaoService {
 
     private final TransacaoDAO transacaoDAO;
     private final MetaDAO metaDAO;
+    private final CarteiraService carteiraService;
 
     public TransacaoService(TransacaoDAO transacaoDAO, MetaDAO metaDAO) {
         this.transacaoDAO = Objects.requireNonNull(transacaoDAO);
         this.metaDAO = Objects.requireNonNull(metaDAO);
+        this.carteiraService = null;
+    }
+
+    public TransacaoService(TransacaoDAO transacaoDAO, MetaDAO metaDAO, CarteiraService carteiraService) {
+        this.transacaoDAO = Objects.requireNonNull(transacaoDAO);
+        this.metaDAO = Objects.requireNonNull(metaDAO);
+        this.carteiraService = Objects.requireNonNull(carteiraService);
     }
 
     public void registrar(
@@ -29,6 +37,17 @@ public class TransacaoService {
             Meta meta,
             String comentario,
             LocalDate data) {
+        registrar(tipo, categoria, valorCentavos, meta, comentario, data, carteiraPadraoIdOuNull());
+    }
+
+    public void registrar(
+            TipoTransacao tipo,
+            Categoria categoria,
+            long valorCentavos,
+            Meta meta,
+            String comentario,
+            LocalDate data,
+            UUID carteiraId) {
 
         Objects.requireNonNull(tipo, "tipo é obrigatório");
         Objects.requireNonNull(categoria, "categoria é obrigatória");
@@ -46,7 +65,7 @@ public class TransacaoService {
 
         if (categoria == Categoria.AdicionarMeta) {
 
-            long saldo = calcularSaldoDisponivelCentavos();
+            long saldo = calcularSaldoParaValidacao(carteiraId);
             if (valorCentavos > saldo)
                 throw new IllegalArgumentException("Saldo insuficiente");
 
@@ -65,7 +84,8 @@ public class TransacaoService {
                     TipoTransacao.Saida,
                     data,
                     meta.getId(),
-                    Categoria.AdicionarMeta
+                    Categoria.AdicionarMeta,
+                    carteiraId
             );
 
             transacaoDAO.inserir(t);
@@ -88,7 +108,8 @@ public class TransacaoService {
                     TipoTransacao.Entrada,
                     data,
                     meta.getId(),
-                    Categoria.RetirarMeta
+                    Categoria.RetirarMeta,
+                    carteiraId
             );
 
             transacaoDAO.inserir(t);
@@ -104,7 +125,8 @@ public class TransacaoService {
                 tipo,
                 data,
                 null,
-                categoria
+                categoria,
+                carteiraId
         );
 
         transacaoDAO.inserir(t);
@@ -129,6 +151,18 @@ public class TransacaoService {
             Meta meta,
             String comentario,
             LocalDate data) {
+        atualizar(idOriginal, tipo, categoria, valorCentavos, meta, comentario, data, null);
+    }
+
+    public void atualizar(
+            UUID idOriginal,
+            TipoTransacao tipo,
+            Categoria categoria,
+            long valorCentavos,
+            Meta meta,
+            String comentario,
+            LocalDate data,
+            UUID carteiraId) {
 
         Objects.requireNonNull(idOriginal, "ID original é obrigatório");
 
@@ -139,8 +173,9 @@ public class TransacaoService {
         excluirTransacao(idOriginal, original.categoria());
 
         try {
+            UUID carteiraEfetiva = carteiraId != null ? carteiraId : original.carteiraId();
             if (categoria == Categoria.AdicionarMeta || categoria == Categoria.RetirarMeta) {
-                registrar(tipo, categoria, valorCentavos, meta, comentario, data);
+                registrar(tipo, categoria, valorCentavos, meta, comentario, data, carteiraEfetiva);
                 return;
             }
 
@@ -159,7 +194,8 @@ public class TransacaoService {
                     tipo,
                     data,
                     meta != null ? meta.getId() : null,
-                    categoria
+                    categoria,
+                    carteiraEfetiva
             );
             transacaoDAO.inserir(atualizada);
         } catch (RuntimeException e) {
@@ -169,7 +205,9 @@ public class TransacaoService {
     }
 
     public long calcularSaldoDisponivelCentavos() {
-        return transacaoDAO.calcularSaldo();
+        return carteiraService != null
+                ? carteiraService.calcularSaldoTotalCentavos()
+                : transacaoDAO.calcularSaldo();
     }
 
     public long calcularReceitasMes(YearMonth mes) {
@@ -231,5 +269,16 @@ public class TransacaoService {
         }
 
         transacaoDAO.inserir(original);
+    }
+
+    private UUID carteiraPadraoIdOuNull() {
+        return carteiraService != null ? carteiraService.carteiraPadraoId() : null;
+    }
+
+    private long calcularSaldoParaValidacao(UUID carteiraId) {
+        if (carteiraService != null && carteiraId != null) {
+            return carteiraService.calcularSaldoCarteiraCentavos(carteiraId);
+        }
+        return calcularSaldoDisponivelCentavos();
     }
 }
